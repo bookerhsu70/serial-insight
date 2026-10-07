@@ -43,7 +43,7 @@
           </div>
           <div>
             <p class="source-label">資料來源</p>
-            <p class="source-file">整合設備清單.xlsx</p>
+            <p class="source-file" id="sourceFileLabel">整合設備清單.xlsx</p>
             <p class="source-meta"><span id="sourceSheetCount">3</span> 個工作表 · 已正規化</p>
           </div>
         </section>
@@ -52,7 +52,12 @@
       <main class="workspace">
         <header class="topbar">
           <div class="breadcrumb"><span>內部工具</span><span class="breadcrumb-slash">/</span><strong>設備查詢</strong></div>
-          <div class="sync-status"><span class="status-dot"></span><span id="syncStatus">資料已載入</span></div>
+          <div class="topbar-actions">
+            <input id="dataFileInput" type="file" accept=".xlsx,.xls,.csv" hidden />
+            <button class="import-button" id="importButton" type="button"><span class="import-icon" aria-hidden="true">＋</span><span>匯入資料表</span></button>
+            <button class="restore-button" id="restoreButton" type="button" hidden>恢復內建資料</button>
+            <div class="sync-status"><span class="status-dot"></span><span id="syncStatus">資料已載入</span></div>
+          </div>
         </header>
 
         <div class="workspace-body">
@@ -175,6 +180,7 @@
       </main>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="/vendor/xlsx.full.min.js"></script>
     <script src="/app.js" defer></script>
   </body>
 </html>

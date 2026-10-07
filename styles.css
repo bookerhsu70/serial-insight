@@ -24,6 +24,7 @@
 }
 
 * { box-sizing: border-box; }
+*[hidden] { display: none !important; }
 html { min-width: 320px; background: var(--paper); }
 body { margin: 0; min-width: 320px; background: var(--paper); }
 button, input { font: inherit; }
@@ -68,6 +69,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(25, 167, 160
 .breadcrumb { color: #95a5ae; font-size: 11px; letter-spacing: 0.04em; }
 .breadcrumb strong { color: var(--ink); font-weight: 700; }
 .breadcrumb-slash { display: inline-block; margin: 0 11px; color: #c0ccd1; }
+.topbar-actions { display: flex; align-items: center; gap: 14px; }
+.import-button, .restore-button { height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 5px; font-size: 10px; font-weight: 700; transition: 160ms ease; }
+.import-button { color: var(--teal-dark); border: 1px solid #bfe2df; background: #eefaf9; }
+.import-button:hover { color: white; border-color: var(--teal); background: var(--teal); box-shadow: 0 5px 12px rgba(25, 167, 160, 0.15); }
+.import-icon { font-size: 16px; font-weight: 400; line-height: 1; }
+.restore-button { color: #9b6a4b; border: 1px solid #ead7ca; background: #fff8f3; }
+.restore-button:hover { color: #8c4a29; border-color: #d6a88d; background: #fff0e7; }
 .sync-status { display: flex; align-items: center; gap: 8px; color: #66818b; font-size: 10px; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 4px rgba(25, 167, 160, 0.12); }
 .status-dot.is-loading { background: #d5a055; box-shadow: 0 0 0 4px rgba(213, 160, 85, 0.12); }
@@ -192,6 +200,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(25, 167, 160
   .brand-lockup { justify-content: flex-start; }
   .rail-section--recent { display: none; }
   .topbar { height: 56px; padding: 0 22px; }
+  .topbar-actions { gap: 9px; }
+  .import-button, .restore-button { height: 29px; padding: 0 8px; font-size: 9px; }
+  .sync-status { font-size: 9px; }
   .workspace-body { padding: 37px 22px 50px; }
   .query-hero { align-items: start; padding-bottom: 28px; }
   .hero-index { display: none; }
@@ -205,6 +216,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(25, 167, 160
 @media (max-width: 570px) {
   .topbar { padding: 0 17px; }
   .breadcrumb { font-size: 10px; }
+  .topbar-actions { gap: 7px; }
+  .sync-status { display: none; }
+  .import-button, .restore-button { font-size: 9px; }
   .workspace-body { padding: 31px 17px 40px; }
   .hero-copy h1 { font-size: 38px; }
   .hero-description { margin-top: 15px; font-size: 12px; }

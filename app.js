@@ -14,9 +14,117 @@ const resultContent = $(".result-content");
 const emptyResult = $(".empty-result");
 const toast = $("#toast");
 const RECENT_KEY = "serial-insight-recent-v1";
+const IMPORT_DATA_KEY = "serial-insight-imported-data-v1";
+
+const FIELD_ALIASES = {
+  customerName: ["客戶名稱"],
+  model: ["設備型號"],
+  clusterName: ["Cluster Name"],
+  serialNumber: ["序號"],
+  region: ["地區"],
+  warrantyType: ["保固類型(原廠 or 文偉)"],
+  expiry: ["維護到期日", "保固到期日", "維護起訖"],
+  systemVersion: ["系統版本"],
+  contactName: ["客戶窗口"],
+  contactEmail: ["客戶 e-mail", "客戶email"],
+  contactPhone: ["客戶電話"],
+  sales: ["業務"],
+  accountSe1: ["Account SE1"],
+  accountSe2: ["Account SE2"],
+};
 
 function normalizeSerial(value) {
   return String(value || "").replace(/\u200b/g, "").trim().toUpperCase();
+}
+
+function cleanImportedCell(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return `${value.getFullYear()}/${value.getMonth() + 1}/${value.getDate()}`;
+  }
+  return String(value).replace(/\u200b/g, "").replace(/\s+/g, " ").trim();
+}
+
+function splitImportedSerials(value) {
+  if (value === null || value === undefined) return [];
+  const raw = String(value).replace(/\u200b/g, "").trim();
+  if (!raw) return [];
+  return raw.split(/[\r\n;,，；]+/).map((part) => cleanImportedCell(part)).filter(Boolean);
+}
+
+function findHeaderIndex(headers, aliases) {
+  return aliases.map((alias) => headers.indexOf(alias)).find((index) => index >= 0) ?? null;
+}
+
+function buildDataFromWorkbook(workbook, sourceFile) {
+  const records = [];
+  let rawRows = 0;
+  let unsearchableRows = 0;
+  const sourceRowCounts = {};
+
+  workbook.SheetNames.forEach((sheetName) => {
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: "", raw: true, blankrows: false });
+    if (!rows.length) return;
+    const headers = rows[0].map(cleanImportedCell);
+    const indices = Object.fromEntries(Object.entries(FIELD_ALIASES).map(([key, aliases]) => [key, findHeaderIndex(headers, aliases)]));
+    let sourceRows = 0;
+    rows.slice(1).forEach((row, rowOffset) => {
+      if (!row.some((value) => cleanImportedCell(value))) return;
+      rawRows += 1;
+      sourceRows += 1;
+      const values = {};
+      Object.entries(indices).forEach(([key, index]) => {
+        values[key] = index === null ? "" : cleanImportedCell(row[index]);
+      });
+      const serialIndex = indices.serialNumber;
+      const serials = splitImportedSerials(serialIndex === null ? "" : row[serialIndex]);
+      if (!serials.length) {
+        unsearchableRows += 1;
+        return;
+      }
+      serials.forEach((serial) => records.push({
+        customerName: values.customerName,
+        model: values.model,
+        clusterName: values.clusterName,
+        serialNumber: serial,
+        region: values.region,
+        warrantyType: values.warrantyType,
+        expiry: values.expiry,
+        systemVersion: values.systemVersion,
+        contactName: values.contactName,
+        contactEmail: values.contactEmail,
+        contactPhone: values.contactPhone,
+        sales: values.sales,
+        accountSe1: values.accountSe1,
+        accountSe2: values.accountSe2,
+        sourceSheet: sheetName,
+        sourceRow: rowOffset + 2,
+      }));
+    });
+    if (sourceRows) sourceRowCounts[sheetName] = sourceRows;
+  });
+
+  const customers = [...new Set(records.map((record) => record.customerName).filter(Boolean))].sort();
+  const regions = [...new Set(records.map((record) => record.region).filter(Boolean))].sort();
+  const warranties = [...new Set(records.map((record) => record.warrantyType).filter(Boolean))].sort();
+  return {
+    sourceFile,
+    sourceSheets: workbook.SheetNames,
+    imported: true,
+    stats: {
+      rawRows,
+      searchableRecords: records.length,
+      unsearchableRows,
+      customerCount: customers.length,
+      regionCount: regions.length,
+      warrantyCount: warranties.length,
+      sourceRowCounts,
+      customers,
+      regions,
+      warranties,
+    },
+    records,
+  };
 }
 
 function displayValue(value) {
@@ -230,24 +338,65 @@ async function copyCurrentSerial() {
   }
 }
 
+function applyData(data, sourceMode = "default") {
+  state.data = data;
+  state.records = data.records || [];
+  state.bySerial = new Map(state.records.map((record) => [normalizeSerial(record.serialNumber), record]));
+  updateStats(data);
+  $("#sourceFileLabel").textContent = data.sourceFile || "整合設備清單.xlsx";
+  $("#restoreButton").hidden = sourceMode !== "imported";
+  setSyncStatus(sourceMode === "imported" ? "已套用匯入資料" : "資料已載入");
+}
+
+async function fetchDefaultData() {
+  const response = await fetch("/data/equipment.json", { cache: "no-store" });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
 async function loadData() {
   setSyncStatus("正在載入資料", "loading");
   try {
-    const response = await fetch("/data/equipment.json", { cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    state.data = data;
-    state.records = data.records || [];
-    state.bySerial = new Map(state.records.map((record) => [normalizeSerial(record.serialNumber), record]));
-    updateStats(data);
-    setSyncStatus("資料已載入");
+    const stored = localStorage.getItem(IMPORT_DATA_KEY);
+    if (stored) {
+      const importedData = JSON.parse(stored);
+      if (Array.isArray(importedData.records)) {
+        applyData(importedData, "imported");
+        return;
+      }
+    }
+    applyData(await fetchDefaultData());
   } catch (error) {
     console.error(error);
     setSyncStatus("資料載入失敗", "error");
     $("#resultCount").textContent = "資料錯誤";
     $("#resultTitle").textContent = "目前無法載入查詢資料";
-    $("#resultMessage").textContent = "請重新整理頁面；若問題持續，請確認 data/equipment.json 是否存在。";
+    $("#resultMessage").textContent = "請重新整理頁面；若問題持續，請確認資料檔案是否存在。";
     showToast("資料載入失敗，請重新整理頁面", true);
+  }
+}
+
+async function importDataFile(file) {
+  if (!window.XLSX) throw new Error("Excel 解析函式庫尚未載入");
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+  const data = buildDataFromWorkbook(workbook, file.name);
+  if (!data.records.length) throw new Error("檔案中沒有找到可查詢的序號欄位或資料");
+  localStorage.setItem(IMPORT_DATA_KEY, JSON.stringify(data));
+  applyData(data, "imported");
+  renderReady();
+  showToast(`已匯入 ${data.stats.searchableRecords} 筆序號資料`);
+}
+
+async function restoreDefaultData() {
+  try {
+    localStorage.removeItem(IMPORT_DATA_KEY);
+    setSyncStatus("正在恢復內建資料", "loading");
+    applyData(await fetchDefaultData());
+    renderReady();
+    showToast("已恢復內建資料");
+  } catch (error) {
+    console.error(error);
+    showToast("恢復內建資料失敗", true);
   }
 }
 
@@ -279,6 +428,22 @@ $("#clearRecentButton").addEventListener("click", () => {
   showToast("最近查詢已清除");
 });
 $("#copySerialButton").addEventListener("click", copyCurrentSerial);
+$("#importButton").addEventListener("click", () => $("#dataFileInput").click());
+$("#dataFileInput").addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    setSyncStatus("正在匯入資料", "loading");
+    await importDataFile(file);
+  } catch (error) {
+    console.error(error);
+    setSyncStatus(state.data?.imported ? "已套用匯入資料" : "資料已載入", state.data ? "ready" : "error");
+    showToast(error.message || "匯入失敗，請確認檔案格式", true);
+  } finally {
+    event.target.value = "";
+  }
+});
+$("#restoreButton").addEventListener("click", restoreDefaultData);
 document.querySelectorAll("[data-example]").forEach((button) => {
   button.addEventListener("click", () => {
     input.value = button.dataset.example;
