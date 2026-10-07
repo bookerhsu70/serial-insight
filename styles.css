@@ -135,7 +135,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(25, 167, 160
 .expiry-badge.is-neutral { color: #6f838c; border-color: #dce7eb; background: #f7fafb; }
 .result-title-row { display: flex; align-items: end; justify-content: space-between; gap: 15px; margin-top: 23px; }
 .field-kicker, .detail-label { margin: 0; color: #9baab0; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; }
-.result-title-row h3 { margin: 7px 0 0; color: var(--navy-900); font-size: clamp(22px, 3vw, 31px); letter-spacing: -0.05em; }
+.result-title-row h3 { margin: 7px 0 0; color: var(--navy-900); font-size: clamp(22px, 3vw, 31px); letter-spacing: -0.05em; white-space: pre-line; overflow-wrap: anywhere; }
 .copy-button { display: flex; align-items: center; gap: 6px; padding: 5px 0; color: #80969d; border: 0; background: transparent; font-size: 10px; }
 .copy-button:hover { color: var(--teal-dark); }
 .copy-button svg { width: 14px; height: 14px; }
@@ -144,7 +144,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(25, 167, 160
 .detail-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin-top: 28px; border: 1px solid #e4edef; border-radius: 7px; background: #e4edef; overflow: hidden; }
 .detail-cell { min-height: 78px; display: flex; flex-direction: column; justify-content: center; gap: 9px; padding: 13px 14px; background: #fcfefe; }
 .detail-cell--accent { background: #f2fbfa; }
-.detail-cell strong, .contact-cell strong { overflow: hidden; color: var(--navy-900); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.detail-cell strong, .contact-cell strong { overflow: visible; color: var(--navy-900); font-size: 13px; font-weight: 700; text-overflow: clip; white-space: pre-line; overflow-wrap: anywhere; }
 .contact-block { margin-top: 23px; padding: 17px 0 0; border-top: 1px solid #e7eff0; }
 .contact-heading { display: flex; align-items: center; gap: 8px; color: var(--navy-900); font-size: 11px; font-weight: 700; }
 .contact-icon { width: 18px; height: 18px; display: grid; place-items: center; color: var(--teal); border: 1px solid #b6dfdc; border-radius: 50%; font-size: 13px; transform: rotate(180deg); }

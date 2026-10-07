@@ -42,7 +42,8 @@ function cleanImportedCell(value) {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     return `${value.getFullYear()}/${value.getMonth() + 1}/${value.getDate()}`;
   }
-  return String(value).replace(/\u200b/g, "").replace(/\s+/g, " ").trim();
+  const text = String(value).replace(/\u200b/g, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  return text.split("\n").map((line) => line.replace(/[ \t\f\v]+/g, " ").trim()).join("\n").trim();
 }
 
 function splitImportedSerials(value) {

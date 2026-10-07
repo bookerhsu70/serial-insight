@@ -36,7 +36,9 @@ def clean(value: object) -> str:
         return ""
     if isinstance(value, (datetime, date)):
         return value.strftime("%Y/%-m/%-d")
-    return re.sub(r"\s+", " ", str(value).replace("\u200b", "")).strip()
+    text = str(value).replace("\u200b", "").replace("\r\n", "\n").replace("\r", "\n")
+    lines = [re.sub(r"[ \t\f\v]+", " ", line).strip() for line in text.split("\n")]
+    return "\n".join(lines).strip()
 
 
 def split_serials(value: object) -> list[str]:
