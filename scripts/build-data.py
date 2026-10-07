@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""將整合設備清單.xlsx 正規化為前端可快速查詢的 JSON。"""
+"""將新版整合設備清單 Excel 正規化為前端可快速查詢的 JSON。"""
 from __future__ import annotations
 
 import json
@@ -10,7 +10,7 @@ from pathlib import Path
 
 import openpyxl
 
-SOURCE = Path("/home/ubuntu/upload/整合設備清單.xlsx")
+SOURCE = Path("/home/ubuntu/upload/整合設備清單(1).xlsx")
 OUTPUT = Path("data/equipment.json")
 
 FIELD_ALIASES = {
